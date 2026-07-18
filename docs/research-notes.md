@@ -177,6 +177,13 @@ showed the separate bottom Freestyle text label still opens Freestyle. A fallbac
 can therefore split the original Freestyle affordance: circular icon = Downloadable
 Quests, text label = Freestyle.
 
+The first split fallback also tried to change the fixed icon art/text to the
+Downloadable Quest art and move it beside Freestyle. In-game testing showed the icon
+became transparent/click-through. The safer fallback keeps the Freestyle icon record at
+its stock rectangle/art and only patches executable routing. The original panning map
+button can still be removed from UIData so there is no dead Downloadable Quest marker on
+the map.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

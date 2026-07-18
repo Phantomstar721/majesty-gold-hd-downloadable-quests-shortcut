@@ -2,8 +2,8 @@ param(
     [string]$GamePath = "",
     [Nullable[int]]$X = $null,
     [Nullable[int]]$Y = $null,
-    [int]$Width = 66,
-    [int]$Height = 66,
+    [int]$Width = 97,
+    [int]$Height = 93,
     [switch]$DryRun
 )
 
@@ -20,6 +20,7 @@ $CustomQuestObjectBytes = [byte[]](0xC2, 0x0F, 0x00, 0x00)
 $FreestyleObjectBytes = [byte[]](0x88, 0x13, 0x00, 0x00)
 $FreestyleIconCallbackOffset = 0x798B6
 $CustomQuestCompareImmediateOffset = 0x7A0FE
+$StockFreestyleFrame = 1039
 
 function Read-U32 {
     param([byte[]]$Bytes, [int]$Offset)
@@ -229,22 +230,44 @@ function Patch-UiDataFile {
         return [pscustomobject]@{ Status = "Skipped"; Reason = "No APdb quest menu in this resolution."; Path = $Path }
     }
 
-    $alreadyUiPatched = $false
     $freestyle = Find-Element $bytes $apdb 77 5000 -RequireFixed
     if ($null -eq $freestyle) {
         $freestyle = Find-Element $bytes $apdb 17 5000 -RequireFixed
-        $alreadyUiPatched = $null -ne $freestyle
     }
     if ($null -eq $freestyle) {
         return [pscustomobject]@{ Status = "Skipped"; Reason = "Could not find the fixed Freestyle icon record."; Path = $Path }
     }
 
+    $freestyleLabel = Find-Element $bytes $apdb 82 5900
     $mapButton = Find-Element $bytes $apdb 17 4034
 
-    $targetX = if ($X.HasValue) { $X.Value } elseif ($alreadyUiPatched) { $freestyle.X } else { $freestyle.X + $freestyle.Width + 13 }
-    $targetY = if ($Y.HasValue) { $Y.Value } elseif ($alreadyUiPatched) { $freestyle.Y } else { $freestyle.Y + [int][Math]::Round(($freestyle.Height - $Height) / 2) }
+    if ($null -ne $freestyleLabel) {
+        $stockX = $freestyleLabel.X + 40
+        $stockY = $freestyleLabel.Y - 59
+    } else {
+        $stockX = $freestyle.X
+        $stockY = $freestyle.Y
+    }
 
-    $status = if ($alreadyUiPatched -and $null -eq $mapButton) { "AlreadyPatched" } else { "Patched" }
+    $targetX = if ($X.HasValue) { $X.Value } else { $stockX }
+    $targetY = if ($Y.HasValue) { $Y.Value } else { $stockY }
+
+    $needsIconRepair = (
+        $freestyle.X -ne $targetX -or
+        $freestyle.Y -ne $targetY -or
+        $freestyle.Width -ne $Width -or
+        $freestyle.Height -ne $Height -or
+        (Test-ElementHasTokenPair $bytes ($freestyle.Offset + 28) $freestyle.EndOffset 33 17) -or
+        (Test-ElementHasTokenPair $bytes ($freestyle.Offset + 28) $freestyle.EndOffset 12 $IX34)
+    )
+
+    for ($offset = $freestyle.Offset + 28; $offset -le ($freestyle.EndOffset - 8); $offset += 4) {
+        if ((Read-U32 $bytes $offset) -eq 13 -and (Read-U32 $bytes ($offset + 4)) -ne $StockFreestyleFrame) {
+            $needsIconRepair = $true
+        }
+    }
+
+    $status = if ((-not $needsIconRepair) -and $null -eq $mapButton) { "AlreadyPatched" } else { "Patched" }
     $result = [pscustomobject]@{
         Status = $status
         Path = $Path
@@ -276,14 +299,14 @@ function Patch-UiDataFile {
     for ($offset = $freestyle.Offset + 28; $offset -le ($freestyle.EndOffset - 8); $offset += 4) {
         $token = Read-U32 $bytes $offset
         $value = Read-U32 $bytes ($offset + 4)
-        if ($token -eq 33 -and $value -eq 77) {
-            Write-U32 $bytes ($offset + 4) 17
+        if ($token -eq 33 -and $value -eq 17) {
+            Write-U32 $bytes ($offset + 4) 77
         }
-        if ($token -eq 12 -and $value -eq $INPq) {
-            Write-U32 $bytes ($offset + 4) $IX34
+        if ($token -eq 12 -and $value -eq $IX34) {
+            Write-U32 $bytes ($offset + 4) $INPq
         }
-        if ($token -eq 13 -and $value -eq 1039) {
-            Write-U32 $bytes ($offset + 4) 1005
+        if ($token -eq 13 -and $value -ne $StockFreestyleFrame) {
+            Write-U32 $bytes ($offset + 4) $StockFreestyleFrame
         }
     }
 
@@ -364,7 +387,7 @@ $results = foreach ($file in $uiFiles) {
 foreach ($item in $results) {
     $name = Split-Path -Leaf $item.Path
     if ($item.Status -eq "Patched" -or $item.Status -eq "WouldPatch" -or $item.Status -eq "AlreadyPatched") {
-        Write-Host ("{0}: {1} fixed Freestyle icon visual -> Custom Quests at {2} rect={3}" -f $name, $item.Status, $item.Offset, $item.NewRect)
+        Write-Host ("{0}: {1} stock Freestyle icon routed to Custom Quests at {2} rect={3}" -f $name, $item.Status, $item.Offset, $item.NewRect)
     } else {
         Write-Host ("{0}: {1} ({2})" -f $name, $item.Status, $item.Reason)
     }
