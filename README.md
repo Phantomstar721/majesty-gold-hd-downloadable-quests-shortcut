@@ -1,20 +1,24 @@
-# Majesty Gold HD - Move Custom Quest Button
+# Majesty Gold HD - Downloadable Quests Shortcut
 
-This tiny Windows helper experiments with moving the Custom/Downloadable Quest button
-on Majesty Gold HD's quest selection map down beside the permanent bottom controls.
+This tiny Windows helper makes Majesty Gold HD's Downloadable Quests menu easier to
+reach from the quest selection map.
 
-The normal game places that button on the map itself, which means you often have to
-pan around just to reach downloaded or Workshop quests. This patch changes the
-quest-selection UI data files directly and makes a backup before editing anything.
+The normal game places the Downloadable Quests button on the map itself, so you often
+have to pan around just to reach downloaded or Workshop quests. This patch removes that
+panning-map button and makes the fixed circular compass/Freestyle icon open
+Downloadable Quests instead. The `FREESTYLE QUESTS` text label still opens Freestyle.
+
+The installer changes Majesty's local game files directly and makes backups before
+editing anything.
 
 ## Use It
 
 1. Close Majesty Gold HD.
 2. Download this folder or the release ZIP.
-3. Double-click `Install - Move Custom Quest Button.bat`.
+3. Double-click `Install - Downloadable Quests Shortcut.bat`.
 4. Start Majesty Gold HD and open the quest selection screen.
 
-To undo the change, double-click `Restore Original Custom Quest Button.bat`.
+To undo the change, double-click `Uninstall - Restore Original Quest Buttons.bat`.
 
 If Windows blocks the install because Majesty is under `Program Files`, right-click the
 install BAT and choose **Run as administrator**.
@@ -24,16 +28,20 @@ do not contain the same Custom Quest menu record.
 
 ## What It Changes
 
-The installer patches `Data\UIData_*.dat` inside your Majesty Gold HD install. It looks
-for the quest-select menu record named `APdb`, finds the downloadable quest button,
-relocates that record near the bottom-control block, and moves it beside the Freestyle
-quest button.
+The installer patches `Data\UIData_*.dat` and `MajestyHD.exe` inside your Majesty Gold
+HD install. It looks for the quest-select menu record named `APdb`, removes the
+original panning-map Downloadable Quests button, and routes the fixed circular
+compass/Freestyle icon to the Downloadable Quests menu.
 
-Current limitation: in-game testing showed that this still behaves like a map-layer
-button when the quest map pans. A later opcode/style rewrite experiment crashed the
-quest map, so that unsafe change is not included.
+Known tradeoff: the circular compass icon no longer opens Freestyle. Use the
+`FREESTYLE QUESTS` text label directly below it for Freestyle.
 
 ## Experiments
+
+The main installer uses the split compass/text behavior described above. The other BAT
+files are research leftovers from testing cleaner-looking approaches. They are kept in
+the repo so future work has a breadcrumb trail, but normal players should use only the
+installer and uninstaller named above.
 
 `Experiment - Freestyle Opens Custom Quests.bat` temporarily changes the fixed
 Freestyle button's action/text token from `77` to `17`. This is a diagnostic test:
@@ -83,12 +91,11 @@ object ID `8506` for the custom button. It removes the old `8506` decorative rec
 then inserts the fixed custom clone as `8506` and redirects Custom Quest EXE references
 to that ID.
 
-`Experiment - Split Freestyle Icon To Custom Quests.bat` is a fallback design test. It
-keeps the fixed circular Freestyle icon visually stock, but routes that icon to
-Downloadable Quests while leaving the bottom `FREESTYLE QUESTS` text label as the
-Freestyle launcher. This is not the ideal final design, but it uses the one fixed-layer
-click surface that has proven stable in live testing. A visual swap to the Downloadable
-Quest art made the icon disappear and stop hit-testing.
+`Experiment - Split Freestyle Icon To Custom Quests.bat` is an alias for the current
+installer. It keeps the fixed circular Freestyle icon visually stock, but routes that
+icon to Downloadable Quests while leaving the bottom `FREESTYLE QUESTS` text label as
+the Freestyle launcher. This is the stable compromise found in live testing. A visual
+swap to the Downloadable Quest art made the icon disappear and stop hit-testing.
 
 Original files are backed up here:
 
@@ -98,7 +105,9 @@ Majesty HD\Data\_custom_quest_button_originals
 
 ## Advanced Placement
 
-From PowerShell, you can preview or choose a different placement:
+The older coordinate-only mover is still available for research. In live testing, it
+successfully moved the original Downloadable Quests button but could not detach it from
+the panning map layer.
 
 ```powershell
 powershell.exe -ExecutionPolicy Bypass -File .\scripts\Move-CustomQuestButton.ps1 -DryRun
@@ -112,5 +121,6 @@ This is not a Steam Workshop mod. Majesty loads Workshop mods after the game is 
 running, but this UIData file is loaded from the base install before that mod selection
 flow is useful. For now, a small local patcher is the practical route.
 
-Tested first against the `1680x1050` UI layout. The patcher also scans and patches the
-other newer UIData layouts that contain the same quest-selection menu.
+Tested first against the `1680x1050` UI layout. The patcher scans and patches the other
+newer UIData layouts that contain the same quest-selection menu. The older `800x600`
+and `1024x768` layouts are skipped because they do not contain the same APdb record.

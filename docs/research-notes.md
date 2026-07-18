@@ -184,6 +184,10 @@ its stock rectangle/art and only patches executable routing. The original pannin
 button can still be removed from UIData so there is no dead Downloadable Quest marker on
 the map.
 
+Live test after restoring the stock icon record confirmed the compromise works as
+designed: the compass icon remains visible and opens Downloadable Quests, while the
+`FREESTYLE QUESTS` text label remains visible and opens Freestyle.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

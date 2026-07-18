@@ -204,7 +204,7 @@ function Assert-FileWritable {
         $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     } catch {
         $name = Split-Path -Leaf $Path
-        throw "Cannot patch $name because it is in use or not writable. Close Majesty Gold HD and run this experiment again. If the game is closed, right-click the BAT and choose Run as administrator."
+        throw "Cannot patch $name because it is in use or not writable. Close Majesty Gold HD and run this installer again. If the game is closed, right-click the BAT and choose Run as administrator."
     } finally {
         if ($null -ne $stream) {
             $stream.Dispose()
@@ -356,7 +356,7 @@ if ($uiFiles.Count -eq 0) {
     throw "No UIData_*.dat files found in $dataPath."
 }
 
-Write-Host "Majesty Gold HD experiment: Split Freestyle icon to Custom Quests"
+Write-Host "Majesty Gold HD Downloadable Quests Shortcut installer"
 Write-Host "Game path: $resolvedGamePath"
 if ($DryRun) {
     Write-Host "Dry run: no files will be changed."
@@ -410,6 +410,6 @@ Write-Host ""
 if ($DryRun) {
     Write-Host "Dry run complete."
 } else {
-    Write-Host "Done. The circular icon opens Downloadable Quests; the Freestyle text label should still open Freestyle."
-    Write-Host "Use Restore Original Custom Quest Button.bat to undo this experiment."
+    Write-Host "Done. The circular compass icon opens Downloadable Quests; the Freestyle text label still opens Freestyle."
+    Write-Host "Use Uninstall - Restore Original Quest Buttons.bat to undo this patch."
 }

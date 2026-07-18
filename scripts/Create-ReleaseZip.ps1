@@ -2,8 +2,8 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $dist = Join-Path $root "dist"
-$package = Join-Path $dist "majesty-gold-hd-move-custom-quest-button.zip"
-$staging = Join-Path $dist "majesty-gold-hd-move-custom-quest-button"
+$package = Join-Path $dist "majesty-gold-hd-downloadable-quests-shortcut.zip"
+$staging = Join-Path $dist "majesty-gold-hd-downloadable-quests-shortcut"
 
 if (Test-Path -LiteralPath $staging) {
     Remove-Item -LiteralPath $staging -Recurse -Force
@@ -17,13 +17,15 @@ if (Test-Path -LiteralPath $package) {
 
 New-Item -ItemType Directory -Path $staging | Out-Null
 
+Copy-Item -LiteralPath (Join-Path $root "Install - Downloadable Quests Shortcut.bat") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "Install - Move Custom Quest Button.bat") -Destination $staging
+Copy-Item -LiteralPath (Join-Path $root "Uninstall - Restore Original Quest Buttons.bat") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "Restore Original Custom Quest Button.bat") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "README.md") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "LICENSE") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "scripts") -Destination $staging -Recurse
 
-Compress-Archive -LiteralPath (Join-Path $staging "*") -DestinationPath $package -CompressionLevel Optimal
+Compress-Archive -Path (Join-Path $staging "*") -DestinationPath $package -CompressionLevel Optimal
 Remove-Item -LiteralPath $staging -Recurse -Force
 
 Write-Host "Created:"
