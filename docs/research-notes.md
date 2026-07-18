@@ -125,6 +125,15 @@ Downloadable Quests record still owns object `4034`, so the fixed duplicate is i
 or overwritten. The next diagnostic removes the original map-layer `4034` record before
 inserting the fixed clone.
 
+The replace-map-button experiment made the button visible and clickable beside
+Freestyle, but it still panned with the quest map. This means object ID `4034` appears
+to carry map-layer behavior even when the record is cloned from a fixed Freestyle icon
+and retains fixed opcode `43,1`.
+
+Next diagnostic: use fixed clone object ID `5901` instead of `4034`, remove the original
+map-layer `4034` record, and patch the click dispatcher compare at file offset `0x7A0FE`
+from `4034` to `5901`.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

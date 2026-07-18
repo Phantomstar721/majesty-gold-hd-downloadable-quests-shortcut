@@ -6,6 +6,7 @@ param(
     [Nullable[int]]$Y = $null,
     [int]$Width = 66,
     [int]$Height = 66,
+    [int]$ObjectId = 4034,
     [switch]$RemoveMapButton,
     [switch]$HideMapButton,
     [switch]$DryRun
@@ -200,7 +201,8 @@ function Convert-FreestyleIconToCustomClone {
         [int]$TargetX,
         [int]$TargetY,
         [int]$TargetWidth,
-        [int]$TargetHeight
+        [int]$TargetHeight,
+        [int]$TargetObjectId
     )
 
     [byte[]]$clone = Copy-Range $Record 0 $Record.Length
@@ -222,7 +224,7 @@ function Convert-FreestyleIconToCustomClone {
             Write-U32 $clone ($offset + 4) 1005
         }
         if ($token -eq 6 -and $value -eq 5000) {
-            Write-U32 $clone ($offset + 4) 4034
+            Write-U32 $clone ($offset + 4) ([uint32]$TargetObjectId)
         }
     }
 
@@ -261,7 +263,7 @@ function Patch-UiDataFile {
         return [pscustomobject]@{ Status = "Skipped"; Reason = "Could not find the fixed Freestyle icon record."; Path = $Path }
     }
 
-    $existingClone = Find-Element $bytes $apdb 17 4034 -RequireFixed
+    $existingClone = Find-Element $bytes $apdb 17 ([uint32]$ObjectId) -RequireFixed
     if ($null -ne $existingClone) {
         return [pscustomobject]@{
             Status = "AlreadyPatched"
@@ -292,7 +294,7 @@ function Patch-UiDataFile {
     $insertOffset = $freestyle.EndOffset
     $recordLength = $freestyle.EndOffset - $freestyle.Offset
     [byte[]]$freestyleRecord = Copy-Range $bytes $freestyle.Offset $recordLength
-    [byte[]]$cloneRecord = Convert-FreestyleIconToCustomClone $freestyleRecord $targetX $targetY $Width $Height
+    [byte[]]$cloneRecord = Convert-FreestyleIconToCustomClone $freestyleRecord $targetX $targetY $Width $Height $ObjectId
     $removeLength = 0
     $removeOffset = $null
     $removeEndOffset = $null
@@ -397,7 +399,7 @@ $results = foreach ($file in $uiFiles) {
 foreach ($item in $results) {
     $name = Split-Path -Leaf $item.Path
     if ($item.Status -eq "Patched" -or $item.Status -eq "WouldPatch" -or $item.Status -eq "AlreadyPatched") {
-        Write-Host ("{0}: {1} fixed custom button at {2} rect={3}" -f $name, $item.Status, $item.InsertOffset, $item.NewRect)
+        Write-Host ("{0}: {1} fixed custom button object={2} at {3} rect={4}" -f $name, $item.Status, $ObjectId, $item.InsertOffset, $item.NewRect)
     } else {
         Write-Host ("{0}: {1} ({2})" -f $name, $item.Status, $item.Reason)
     }

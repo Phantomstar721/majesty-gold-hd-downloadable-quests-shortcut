@@ -72,6 +72,11 @@ own fixed-layer button.
 also removes the original panning-map `4034` record first. This avoids duplicate object
 ID collision and is the more likely final implementation path.
 
+`Experiment - Fixed Unique Custom Quest Button.bat` removes the original panning-map
+button, inserts a fixed clone with object ID `5901`, and patches the EXE click
+dispatcher so `5901` opens Custom Quests. This tests whether avoiding `4034` avoids the
+map-layer attachment.
+
 Original files are backed up here:
 
 ```text
