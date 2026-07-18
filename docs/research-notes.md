@@ -45,6 +45,11 @@ This keeps text/action ID `17` and image ID `4034` intact.
 That experiment crashed the quest map with `Unknown opcode in CYDialog Stream`, so the
 classification is not a simple style-tail swap.
 
+Next diagnostic: change only the existing fixed Freestyle button's `33,77` token to
+`33,17`, leaving its opcode shape and sprite intact. If the button opens Custom Quests,
+then action ID `17` can run from a fixed overlay record and the real solution should
+duplicate a fixed overlay control record rather than convert the original map marker.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

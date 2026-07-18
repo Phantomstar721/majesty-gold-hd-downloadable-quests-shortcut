@@ -33,6 +33,13 @@ Current limitation: in-game testing showed that this still behaves like a map-la
 button when the quest map pans. A later opcode/style rewrite experiment crashed the
 quest map, so that unsafe change is not included.
 
+## Experiments
+
+`Experiment - Freestyle Opens Custom Quests.bat` temporarily changes the fixed
+Freestyle button's action/text token from `77` to `17`. This is a diagnostic test:
+if the fixed Freestyle button opens Custom Quests, then the next proper patch can be
+built by duplicating a known fixed overlay button instead of mutating the map marker.
+
 Original files are backed up here:
 
 ```text
