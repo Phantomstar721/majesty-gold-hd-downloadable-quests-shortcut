@@ -41,7 +41,8 @@ if the fixed Freestyle button opens Custom Quests, then the next proper patch ca
 built by duplicating a known fixed overlay button instead of mutating the map marker.
 
 `Experiment - Freestyle Label Opens Custom Quests.bat` targets the wider bottom
-`FREESTYLE QUESTS` label/button record instead, changing token `82` to `17`.
+`FREESTYLE QUESTS` label/button record instead, changing visible text token `82` to
+`17` and the likely action/hotkey token `70` to `76`.
 
 Original files are backed up here:
 

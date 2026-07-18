@@ -51,8 +51,12 @@ then action ID `17` can run from a fixed overlay record and the real solution sh
 duplicate a fixed overlay control record rather than convert the original map marker.
 
 The circular Freestyle icon record may not be the actual clicked surface. A follow-up
-diagnostic changes the wider `FREESTYLE QUESTS` label/button record from token `82` to
-`17`.
+diagnostic changed the wider `FREESTYLE QUESTS` label/button record from token `82` to
+`17`; in-game, this changed the visible bottom text to `Load Downloadable`, but the
+button still launched Freestyle and the top hover still showed `Freestyle Game`.
+
+Next diagnostic changes the wider label record's `5,70` pair to `5,76` as well. These
+values line up with ASCII hotkeys/actions (`F` to `L`) across other menu records.
 
 The bottom Freestyle button is identified by:
 

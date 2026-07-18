@@ -112,6 +112,7 @@ function Find-FreestyleLabelToken {
         $next = Get-NextElementOffset $Bytes $entryOffset $entryEnd $relative
         $hasImage5900 = $false
         $textTokenOffset = $null
+        $actionValueOffset = $null
 
         for ($offset = $absolute + 28; $offset -le ($next - 8); $offset += 4) {
             $token = Read-U32 $Bytes $offset
@@ -119,15 +120,19 @@ function Find-FreestyleLabelToken {
             if ($token -eq 7 -and $value -eq 82) {
                 $textTokenOffset = $offset + 4
             }
+            if ($token -eq 5 -and $value -eq 70) {
+                $actionValueOffset = $offset + 4
+            }
             if ($token -eq 6 -and $value -eq 5900) {
                 $hasImage5900 = $true
             }
         }
 
-        if ($null -ne $textTokenOffset -and $hasImage5900) {
+        if ($null -ne $textTokenOffset -and $null -ne $actionValueOffset -and $hasImage5900) {
             return [pscustomobject]@{
                 ElementOffset = $absolute
                 TextValueOffset = $textTokenOffset
+                ActionValueOffset = $actionValueOffset
                 Rect = "{0},{1},{2},{3}" -f (Read-U32 $Bytes ($absolute + 12)), (Read-U32 $Bytes ($absolute + 16)), (Read-U32 $Bytes ($absolute + 20)), (Read-U32 $Bytes ($absolute + 24))
             }
         }
@@ -164,7 +169,7 @@ function Patch-UiDataFile {
 
     $label = Find-FreestyleLabelToken $bytes $apdb
     if ($null -eq $label) {
-        return [pscustomobject]@{ Status = "Skipped"; Reason = "Could not find the Freestyle label/button token."; Path = $Path }
+        return [pscustomobject]@{ Status = "Skipped"; Reason = "Could not find the stock Freestyle label/button text and action tokens."; Path = $Path }
     }
 
     $result = [pscustomobject]@{
@@ -189,6 +194,7 @@ function Patch-UiDataFile {
     }
 
     Write-U32 $bytes $label.TextValueOffset 17
+    Write-U32 $bytes $label.ActionValueOffset 76
     [IO.File]::WriteAllBytes($Path, $bytes)
 
     return $result
@@ -223,7 +229,7 @@ $results = foreach ($file in $uiFiles) {
 foreach ($item in $results) {
     $name = Split-Path -Leaf $item.Path
     if ($item.Status -eq "Patched" -or $item.Status -eq "WouldPatch") {
-        Write-Host ("{0}: {1} Freestyle label text/action 82 -> 17 at {2} rect={3}" -f $name, $item.Status, $item.Offset, $item.Rect)
+        Write-Host ("{0}: {1} Freestyle label text 82 -> 17 and action 70 -> 76 at {2} rect={3}" -f $name, $item.Status, $item.Offset, $item.Rect)
     } else {
         Write-Host ("{0}: {1} ({2})" -f $name, $item.Status, $item.Reason)
     }
