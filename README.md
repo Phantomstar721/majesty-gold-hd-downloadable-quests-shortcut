@@ -83,6 +83,12 @@ object ID `8506` for the custom button. It removes the old `8506` decorative rec
 then inserts the fixed custom clone as `8506` and redirects Custom Quest EXE references
 to that ID.
 
+`Experiment - Split Freestyle Icon To Custom Quests.bat` is a fallback design test. It
+turns the fixed circular Freestyle icon into the Downloadable Quests button while
+leaving the bottom `FREESTYLE QUESTS` text label as the Freestyle launcher. This is not
+the ideal final design, but it uses the one fixed-layer click surface that has proven
+stable in live testing.
+
 Original files are backed up here:
 
 ```text

@@ -164,6 +164,19 @@ Object `8506` is the bottom-center decorative panel around Freestyle. Temporaril
 the original `8506` APdb record, insert the custom fixed clone as `8506`, and patch
 Custom Quest executable references from `4034` to `8506`.
 
+In-game testing showed the `8506` experiment rendered the button near the bottom, but
+the bottom-center decoration was obviously missing. After panning, the button vanished
+until leaving/re-entering the screen. It was clickable in the sense of hit testing, but
+still did not open Downloadable Quests. This suggests fixed-table membership alone is
+not enough; some IDs carry runtime lifecycle/geometry assumptions from their original
+role.
+
+Known working route: object `5000`, the fixed circular Freestyle icon, can be routed to
+Downloadable Quests when the `4034` click compare is changed to `5000`. In-game testing
+showed the separate bottom Freestyle text label still opens Freestyle. A fallback design
+can therefore split the original Freestyle affordance: circular icon = Downloadable
+Quests, text label = Freestyle.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`
