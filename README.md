@@ -54,6 +54,11 @@ bottom `FREESTYLE QUESTS` label/button record and changes its object/image ID fr
 `5900` to `4034`. This tests whether the lower text strip is the click surface that
 dispatches Freestyle.
 
+`Experiment - Freestyle Callback Opens Custom Quests.bat` patches `MajestyHD.exe` so
+the fixed Freestyle icon and label object IDs call the Custom Quests callback instead
+of the Freestyle callback. This is a stronger diagnostic than the UIData-only tests and
+backs up the original EXE before changing anything.
+
 Original files are backed up here:
 
 ```text

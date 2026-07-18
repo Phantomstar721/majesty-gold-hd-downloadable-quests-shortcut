@@ -75,6 +75,25 @@ ID to `4034`, while preserving a valid fixed-control opcode shape.
 
 The follow-up fixed-label diagnostic changes the wider bottom Freestyle label's `6,5900`
 token to `6,4034`, because `5900` appears in the APdb setup path alongside `5000`.
+In-game testing showed this made the bottom label render incorrectly/blank while still
+launching Freestyle. That means the `6,5900` token affects the visual object, but not
+the click dispatch.
+
+Current conclusion: APdb UIData can move or relabel these controls, but the fixed
+bottom Freestyle action is not redirected by changing the obvious text, hotkey, image,
+or object tokens. A true fixed-overlay Custom Quests button probably requires an
+executable patch, a callback registration change, or finding a different UIData opcode
+that safely selects the fixed layer without changing the callback.
+
+Executable callback diagnostic:
+
+- file offset `0x798B6`: callback immediate for object ID `5000`
+- file offset `0x798CE`: callback immediate for object ID `5900`
+- original bytes: `00 93 47 00`, runtime callback `0x479300` / Freestyle
+- diagnostic bytes: `00 92 47 00`, runtime callback `0x479200` / Custom Quests
+
+This leaves UIData stock and tests whether the fixed bottom controls can launch Custom
+Quests when the executable callback registration is changed directly.
 
 The bottom Freestyle button is identified by:
 

@@ -39,6 +39,8 @@ function Get-MajestyPath {
 $resolvedGamePath = Get-MajestyPath $GamePath
 $dataPath = Join-Path $resolvedGamePath "Data"
 $backupDir = Join-Path $dataPath "_custom_quest_button_originals"
+$exePath = Join-Path $resolvedGamePath "MajestyHD.exe"
+$exeBackup = Join-Path $backupDir "MajestyHD.exe.original"
 
 Write-Host "Majesty Gold HD Custom Quest Button restore"
 Write-Host "Game path: $resolvedGamePath"
@@ -49,8 +51,9 @@ if (-not (Test-Path -LiteralPath $backupDir)) {
 }
 
 $backups = Get-ChildItem -LiteralPath $backupDir -Filter "UIData_*.dat.original" | Sort-Object Name
-if ($backups.Count -eq 0) {
-    throw "No UIData backups found in $backupDir."
+$hasExeBackup = Test-Path -LiteralPath $exeBackup
+if ($backups.Count -eq 0 -and -not $hasExeBackup) {
+    throw "No UIData or MajestyHD.exe backups found in $backupDir."
 }
 
 $targets = foreach ($backup in $backups) {
@@ -76,11 +79,29 @@ foreach ($target in $targets) {
     }
 }
 
+if ($hasExeBackup -and (Test-Path -LiteralPath $exePath)) {
+    $stream = $null
+    try {
+        $stream = [IO.File]::Open($exePath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    } catch {
+        throw "Cannot restore MajestyHD.exe because it is in use or not writable. Close Majesty Gold HD and run this restore again. If the game is closed, right-click the BAT and choose Run as administrator."
+    } finally {
+        if ($null -ne $stream) {
+            $stream.Dispose()
+        }
+    }
+}
+
 foreach ($backup in $backups) {
     $fileName = $backup.Name -replace "\.original$", ""
     $target = Join-Path $dataPath $fileName
     Copy-Item -LiteralPath $backup.FullName -Destination $target -Force
     Write-Host "${fileName}: restored"
+}
+
+if ($hasExeBackup -and (Test-Path -LiteralPath $exePath)) {
+    Copy-Item -LiteralPath $exeBackup -Destination $exePath -Force
+    Write-Host "MajestyHD.exe: restored"
 }
 
 Write-Host ""
