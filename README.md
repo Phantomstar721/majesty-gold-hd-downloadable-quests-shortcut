@@ -78,6 +78,11 @@ dispatcher/setup references so `5901` is registered and opens Custom Quests. It 
 retargets an apparently unused fixed-position table slot from `110` to `5901`, so the
 button should be counter-moved with the fixed overlay during map panning.
 
+`Experiment - Reuse Fixed Furniture Slot.bat` temporarily reuses existing fixed-table
+object ID `8506` for the custom button. It removes the old `8506` decorative record,
+then inserts the fixed custom clone as `8506` and redirects Custom Quest EXE references
+to that ID.
+
 Original files are backed up here:
 
 ```text

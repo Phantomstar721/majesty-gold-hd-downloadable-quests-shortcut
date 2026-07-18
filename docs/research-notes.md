@@ -155,6 +155,15 @@ The first fixed table entry is object `110`, which does not appear as an APdb UI
 record. The next diagnostic retargets that unused-looking slot from `110` to `5901` so
 the new button is included in fixed repositioning without stealing visible UI art.
 
+In-game testing showed the `110 -> 5901` table retarget made the button fixed, but it
+appeared at the upper-left and absorbed a huge click area. Slot `110` appears to have
+bad/default runtime geometry for this purpose.
+
+Next diagnostic: reuse an existing fixed-table UI furniture ID with sane geometry.
+Object `8506` is the bottom-center decorative panel around Freestyle. Temporarily remove
+the original `8506` APdb record, insert the custom fixed clone as `8506`, and patch
+Custom Quest executable references from `4034` to `8506`.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

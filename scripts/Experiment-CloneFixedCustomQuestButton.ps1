@@ -7,6 +7,7 @@ param(
     [int]$Width = 66,
     [int]$Height = 66,
     [int]$ObjectId = 4034,
+    [int]$RemoveExistingObjectId = 0,
     [switch]$RemoveMapButton,
     [switch]$HideMapButton,
     [switch]$DryRun
@@ -167,6 +168,42 @@ function Find-Element {
     return $null
 }
 
+function Find-ElementByImageId {
+    param(
+        [byte[]]$Bytes,
+        [object]$Entry,
+        [uint32]$ImageId
+    )
+
+    $entryOffset = $Entry.DataOffset
+    $entryEnd = $Entry.DataOffset + $Entry.DataSize
+
+    for ($relative = 0; $relative -le ($Entry.DataSize - 28); $relative += 4) {
+        $absolute = $entryOffset + $relative
+        if (
+            (Read-U32 $Bytes $absolute) -ne $ElementSentinel -or
+            (Read-U32 $Bytes ($absolute + 4)) -ne 0 -or
+            (Read-U32 $Bytes ($absolute + 8)) -ne 2
+        ) {
+            continue
+        }
+
+        $next = Get-NextElementOffset $Bytes $entryOffset $entryEnd $relative
+        if (Test-ElementHasTokenPair $Bytes ($absolute + 28) $next 6 $ImageId) {
+            return [pscustomobject]@{
+                Offset = $absolute
+                EndOffset = $next
+                X = [int](Read-U32 $Bytes ($absolute + 12))
+                Y = [int](Read-U32 $Bytes ($absolute + 16))
+                Width = [int](Read-U32 $Bytes ($absolute + 20))
+                Height = [int](Read-U32 $Bytes ($absolute + 24))
+            }
+        }
+    }
+
+    return $null
+}
+
 function Insert-Bytes {
     param([byte[]]$Bytes, [int]$Offset, [byte[]]$Chunk)
 
@@ -295,9 +332,7 @@ function Patch-UiDataFile {
     $recordLength = $freestyle.EndOffset - $freestyle.Offset
     [byte[]]$freestyleRecord = Copy-Range $bytes $freestyle.Offset $recordLength
     [byte[]]$cloneRecord = Convert-FreestyleIconToCustomClone $freestyleRecord $targetX $targetY $Width $Height $ObjectId
-    $removeLength = 0
-    $removeOffset = $null
-    $removeEndOffset = $null
+    $removals = @()
 
     if ($RemoveMapButton) {
         if ($null -eq $mapButton) {
@@ -306,9 +341,26 @@ function Patch-UiDataFile {
         if ($mapButton.Offset -eq $freestyle.Offset) {
             return [pscustomobject]@{ Status = "Skipped"; Reason = "Refusing to remove the fixed Freestyle source record."; Path = $Path }
         }
-        $removeOffset = $mapButton.Offset
-        $removeEndOffset = $mapButton.EndOffset
-        $removeLength = $removeEndOffset - $removeOffset
+        $removals += [pscustomobject]@{
+            Start = $mapButton.Offset
+            End = $mapButton.EndOffset
+            Length = $mapButton.EndOffset - $mapButton.Offset
+        }
+    }
+
+    if ($RemoveExistingObjectId -ne 0) {
+        $existingObject = Find-ElementByImageId $bytes $apdb ([uint32]$RemoveExistingObjectId)
+        if ($null -eq $existingObject) {
+            return [pscustomobject]@{ Status = "Skipped"; Reason = "Could not find existing object $RemoveExistingObjectId to remove."; Path = $Path }
+        }
+        if ($existingObject.Offset -eq $freestyle.Offset) {
+            return [pscustomobject]@{ Status = "Skipped"; Reason = "Refusing to remove the fixed Freestyle source record."; Path = $Path }
+        }
+        $removals += [pscustomobject]@{
+            Start = $existingObject.Offset
+            End = $existingObject.EndOffset
+            Length = $existingObject.EndOffset - $existingObject.Offset
+        }
     }
 
     $result = [pscustomobject]@{
@@ -332,21 +384,26 @@ function Patch-UiDataFile {
         Copy-Item -LiteralPath $Path -Destination $backupPath
     }
 
-    if ($RemoveMapButton) {
-        [byte[]]$newBytes = Remove-Bytes $bytes $removeOffset $removeEndOffset
-        if ($insertOffset -gt $removeOffset) {
-            $insertOffset -= $removeLength
+    [byte[]]$newBytes = $bytes
+    $totalRemoved = 0
+    foreach ($removal in @($removals | Sort-Object Start -Descending)) {
+        $newBytes = Remove-Bytes $newBytes $removal.Start $removal.End
+    }
+    foreach ($removal in $removals) {
+        $totalRemoved += $removal.Length
+        if ($insertOffset -gt $removal.Start) {
+            $insertOffset -= $removal.Length
         }
-    } else {
-        [byte[]]$newBytes = $bytes
     }
 
     [byte[]]$newBytes = Insert-Bytes $newBytes $insertOffset $cloneRecord
     $delta = $cloneRecord.Length
     foreach ($entry in $entries) {
         $updatedOffset = $entry.DataOffset
-        if ($RemoveMapButton -and $entry.DataOffset -gt $removeOffset) {
-            $updatedOffset -= $removeLength
+        foreach ($removal in $removals) {
+            if ($updatedOffset -gt $removal.Start) {
+                $updatedOffset -= $removal.Length
+            }
         }
         if ($updatedOffset -gt $insertOffset) {
             $updatedOffset += $delta
@@ -355,9 +412,9 @@ function Patch-UiDataFile {
             Write-U32 $newBytes $entry.DataOffsetField ([uint32]$updatedOffset)
         }
     }
-    Write-U32 $newBytes $apdb.DataSizeField ([uint32]($apdb.DataSize + $delta - $removeLength))
+    Write-U32 $newBytes $apdb.DataSizeField ([uint32]($apdb.DataSize + $delta - $totalRemoved))
 
-    if ($HideMapButton -and $null -ne $mapButton) {
+    if ($HideMapButton -and $null -ne $mapButton -and -not $RemoveMapButton) {
         Write-U32 $newBytes ($mapButton.Offset + 20) 1
         Write-U32 $newBytes ($mapButton.Offset + 24) 1
     }
