@@ -95,6 +95,21 @@ Executable callback diagnostic:
 This leaves UIData stock and tests whether the fixed bottom controls can launch Custom
 Quests when the executable callback registration is changed directly.
 
+In-game testing showed the callback diagnostic changed the hover text and top-left
+preview image to Downloadable Quests, but clicking the bottom Freestyle button still
+opened the Freestyle menu. Therefore the hover callback registration and click
+dispatcher are separate.
+
+Click dispatcher diagnostic:
+
+- file offset `0x7A0FE`: immediate in `cmp ebx, 0x0FC2`
+- original bytes: `C2 0F 00 00`, checking Custom Quest object `4034`
+- diagnostic bytes: `88 13 00 00`, checking Freestyle object `5000`
+
+This reuses the existing Custom Quests click branch for the fixed Freestyle object. It
+temporarily steals the Freestyle click path and may stop the original map-layer Custom
+Quest marker from clicking during the experiment.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

@@ -59,6 +59,10 @@ the fixed Freestyle icon and label object IDs call the Custom Quests callback in
 of the Freestyle callback. This is a stronger diagnostic than the UIData-only tests and
 backs up the original EXE before changing anything.
 
+`Experiment - Freestyle Fully Becomes Custom Quests.bat` patches both the Freestyle
+hover callback and the click dispatcher. This temporarily replaces Freestyle with
+Custom Quests, and is only meant to prove the executable-side path.
+
 Original files are backed up here:
 
 ```text
