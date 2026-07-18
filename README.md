@@ -63,6 +63,11 @@ backs up the original EXE before changing anything.
 hover callback and the click dispatcher. This temporarily replaces Freestyle with
 Custom Quests, and is only meant to prove the executable-side path.
 
+`Experiment - Clone Fixed Custom Quest Button.bat` duplicates the fixed Freestyle icon
+record, converts the duplicate to object `4034`, and places it beside Freestyle. This
+tests the intended final shape: Freestyle stays intact and Downloadable Quests gets its
+own fixed-layer button.
+
 Original files are backed up here:
 
 ```text

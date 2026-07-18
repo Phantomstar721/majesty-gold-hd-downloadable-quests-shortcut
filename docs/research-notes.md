@@ -110,6 +110,15 @@ This reuses the existing Custom Quests click branch for the fixed Freestyle obje
 temporarily steals the Freestyle click path and may stop the original map-layer Custom
 Quest marker from clicking during the experiment.
 
+In-game testing showed that the circular Freestyle icon opened Downloadable Quests after
+the click dispatcher patch, while the text label still opened Freestyle. This proves the
+fixed icon and bottom text label are separate hit targets.
+
+Next final-shape diagnostic: clone the fixed Freestyle icon record, convert only the
+clone to `4034`, and insert it immediately after the original fixed icon record. If the
+stock executable accepts a fixed-layer `4034` clone, this should preserve Freestyle and
+add a separate fixed Downloadable Quests button without EXE patching.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`
