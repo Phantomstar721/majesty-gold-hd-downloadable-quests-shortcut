@@ -8,7 +8,9 @@ $ErrorActionPreference = "Stop"
 $DefaultGamePath = "C:\Program Files (x86)\Steam\steamapps\common\Majesty HD"
 $CustomQuestObjectBytes = [byte[]](0xC2, 0x0F, 0x00, 0x00)
 $UniqueFixedObjectBytes = [byte[]](0x0D, 0x17, 0x00, 0x00)
+$UnusedFixedSlotBytes = [byte[]](0x6E, 0x00, 0x00, 0x00)
 $CustomQuestObjectImmediateOffsets = @(0x798EF, 0x798FA, 0x79904, 0x7994A, 0x7A0FE)
+$FixedRepositionTableSlotOffset = 0x3B42C8
 
 function Get-MajestyPath {
     param([string]$RequestedPath)
@@ -80,6 +82,13 @@ foreach ($offset in $CustomQuestObjectImmediateOffsets) {
     }
 }
 
+$isFixedSlotStock = Test-BytesEqual $bytes $FixedRepositionTableSlotOffset $UnusedFixedSlotBytes
+$isFixedSlotPatched = Test-BytesEqual $bytes $FixedRepositionTableSlotOffset $UniqueFixedObjectBytes
+if (-not $isFixedSlotStock -and -not $isFixedSlotPatched) {
+    $found = [BitConverter]::ToString($bytes, $FixedRepositionTableSlotOffset, 4)
+    throw ("MajestyHD.exe does not match the expected Steam build at fixed table file offset 0x{0:X}. Found {1}." -f $FixedRepositionTableSlotOffset, $found)
+}
+
 Write-Host "Majesty Gold HD experiment: Fixed unique Custom Quest button"
 Write-Host "Game path: $resolvedGamePath"
 if ($DryRun) {
@@ -95,6 +104,12 @@ foreach ($offset in $CustomQuestObjectImmediateOffsets) {
     }
     Write-Host ("MajestyHD.exe: {0} Custom Quest object reference 4034 -> 5901 at file offset 0x{1:X}" -f $status, $offset)
 }
+
+$fixedSlotStatus = if ($isFixedSlotPatched) { "AlreadyPatched" } else { "WouldPatch" }
+if (-not $DryRun -and $fixedSlotStatus -eq "WouldPatch") {
+    $fixedSlotStatus = "Patched"
+}
+Write-Host ("MajestyHD.exe: {0} fixed reposition table slot 110 -> 5901 at file offset 0x{1:X}" -f $fixedSlotStatus, $FixedRepositionTableSlotOffset)
 
 $cloneArgs = @(
     "-NoProfile",
@@ -131,6 +146,7 @@ if (-not (Test-Path -LiteralPath $backupPath)) {
 foreach ($offset in $CustomQuestObjectImmediateOffsets) {
     Write-Bytes $bytes $offset $UniqueFixedObjectBytes
 }
+Write-Bytes $bytes $FixedRepositionTableSlotOffset $UniqueFixedObjectBytes
 [IO.File]::WriteAllBytes($exePath, $bytes)
 
 Write-Host ""

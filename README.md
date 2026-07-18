@@ -74,8 +74,9 @@ ID collision and is the more likely final implementation path.
 
 `Experiment - Fixed Unique Custom Quest Button.bat` removes the original panning-map
 button, inserts a fixed clone with object ID `5901`, and patches the EXE click
-dispatcher/setup references so `5901` is registered and opens Custom Quests. This tests
-whether avoiding `4034` avoids the map-layer attachment.
+dispatcher/setup references so `5901` is registered and opens Custom Quests. It also
+retargets an apparently unused fixed-position table slot from `110` to `5901`, so the
+button should be counter-moved with the fixed overlay during map panning.
 
 Original files are backed up here:
 

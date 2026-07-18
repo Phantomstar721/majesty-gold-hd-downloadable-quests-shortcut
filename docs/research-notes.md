@@ -147,6 +147,14 @@ The registered unique diagnostic patches all known APdb setup references from `4
 - `0x7994A`: callback registration
 - `0x7A0FE`: click dispatcher compare
 
+In-game testing showed this made the `5901` button appear, but it still panned with the
+map and clicking did nothing. The missing fixed-layer behavior appears to be the
+hardcoded fixed reposition table at VA `0x7B54C8` / file `0x3B42C8`.
+
+The first fixed table entry is object `110`, which does not appear as an APdb UI image
+record. The next diagnostic retargets that unused-looking slot from `110` to `5901` so
+the new button is included in fixed repositioning without stealing visible UI art.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`
