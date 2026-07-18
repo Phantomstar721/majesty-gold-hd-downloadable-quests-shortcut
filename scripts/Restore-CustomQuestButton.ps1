@@ -53,6 +53,29 @@ if ($backups.Count -eq 0) {
     throw "No UIData backups found in $backupDir."
 }
 
+$targets = foreach ($backup in $backups) {
+    $fileName = $backup.Name -replace "\.original$", ""
+    Join-Path $dataPath $fileName
+}
+
+foreach ($target in $targets) {
+    if (-not (Test-Path -LiteralPath $target)) {
+        continue
+    }
+
+    $stream = $null
+    try {
+        $stream = [IO.File]::Open($target, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    } catch {
+        $name = Split-Path -Leaf $target
+        throw "Cannot restore $name because it is in use or not writable. Close Majesty Gold HD and run this restore again. If the game is closed, right-click the BAT and choose Run as administrator."
+    } finally {
+        if ($null -ne $stream) {
+            $stream.Dispose()
+        }
+    }
+}
+
 foreach ($backup in $backups) {
     $fileName = $backup.Name -replace "\.original$", ""
     $target = Join-Path $dataPath $fileName

@@ -50,6 +50,10 @@ Next diagnostic: change only the existing fixed Freestyle button's `33,77` token
 then action ID `17` can run from a fixed overlay record and the real solution should
 duplicate a fixed overlay control record rather than convert the original map marker.
 
+The circular Freestyle icon record may not be the actual clicked surface. A follow-up
+diagnostic changes the wider `FREESTYLE QUESTS` label/button record from token `82` to
+`17`.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`
