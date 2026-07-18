@@ -8,7 +8,7 @@ $ErrorActionPreference = "Stop"
 $DefaultGamePath = "C:\Program Files (x86)\Steam\steamapps\common\Majesty HD"
 $CustomQuestObjectBytes = [byte[]](0xC2, 0x0F, 0x00, 0x00)
 $UniqueFixedObjectBytes = [byte[]](0x0D, 0x17, 0x00, 0x00)
-$CustomQuestCompareImmediateOffset = 0x7A0FE
+$CustomQuestObjectImmediateOffsets = @(0x798EF, 0x798FA, 0x79904, 0x7994A, 0x7A0FE)
 
 function Get-MajestyPath {
     param([string]$RequestedPath)
@@ -71,11 +71,13 @@ if (-not (Test-Path -LiteralPath $exePath)) {
 }
 
 [byte[]]$bytes = [IO.File]::ReadAllBytes($exePath)
-$isStock = Test-BytesEqual $bytes $CustomQuestCompareImmediateOffset $CustomQuestObjectBytes
-$isPatched = Test-BytesEqual $bytes $CustomQuestCompareImmediateOffset $UniqueFixedObjectBytes
-if (-not $isStock -and -not $isPatched) {
-    $found = [BitConverter]::ToString($bytes, $CustomQuestCompareImmediateOffset, 4)
-    throw ("MajestyHD.exe does not match the expected Steam build at file offset 0x{0:X}. Found {1}." -f $CustomQuestCompareImmediateOffset, $found)
+foreach ($offset in $CustomQuestObjectImmediateOffsets) {
+    $isStock = Test-BytesEqual $bytes $offset $CustomQuestObjectBytes
+    $isPatched = Test-BytesEqual $bytes $offset $UniqueFixedObjectBytes
+    if (-not $isStock -and -not $isPatched) {
+        $found = [BitConverter]::ToString($bytes, $offset, 4)
+        throw ("MajestyHD.exe does not match the expected Steam build at file offset 0x{0:X}. Found {1}." -f $offset, $found)
+    }
 }
 
 Write-Host "Majesty Gold HD experiment: Fixed unique Custom Quest button"
@@ -85,11 +87,14 @@ if ($DryRun) {
 }
 Write-Host ""
 
-$status = if ($isPatched) { "AlreadyPatched" } else { "WouldPatch" }
-if (-not $DryRun -and $status -eq "WouldPatch") {
-    $status = "Patched"
+foreach ($offset in $CustomQuestObjectImmediateOffsets) {
+    $isPatched = Test-BytesEqual $bytes $offset $UniqueFixedObjectBytes
+    $status = if ($isPatched) { "AlreadyPatched" } else { "WouldPatch" }
+    if (-not $DryRun -and $status -eq "WouldPatch") {
+        $status = "Patched"
+    }
+    Write-Host ("MajestyHD.exe: {0} Custom Quest object reference 4034 -> 5901 at file offset 0x{1:X}" -f $status, $offset)
 }
-Write-Host ("MajestyHD.exe: {0} Custom Quest click dispatcher 4034 -> 5901 at file offset 0x{1:X}" -f $status, $CustomQuestCompareImmediateOffset)
 
 $cloneArgs = @(
     "-NoProfile",
@@ -123,7 +128,9 @@ if (-not (Test-Path -LiteralPath $backupPath)) {
     Copy-Item -LiteralPath $exePath -Destination $backupPath
 }
 
-Write-Bytes $bytes $CustomQuestCompareImmediateOffset $UniqueFixedObjectBytes
+foreach ($offset in $CustomQuestObjectImmediateOffsets) {
+    Write-Bytes $bytes $offset $UniqueFixedObjectBytes
+}
 [IO.File]::WriteAllBytes($exePath, $bytes)
 
 Write-Host ""

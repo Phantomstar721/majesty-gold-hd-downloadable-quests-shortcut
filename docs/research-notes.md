@@ -134,6 +134,19 @@ Next diagnostic: use fixed clone object ID `5901` instead of `4034`, remove the 
 map-layer `4034` record, and patch the click dispatcher compare at file offset `0x7A0FE`
 from `4034` to `5901`.
 
+In-game testing showed the original map button disappeared, but the new `5901` fixed
+clone did not appear. That means APdb records are not enough on their own: object IDs
+must also be registered by executable setup code before they render/click.
+
+The registered unique diagnostic patches all known APdb setup references from `4034` to
+`5901`:
+
+- `0x798EF`: visibility/enable setup branch
+- `0x798FA`: visibility/enable setup branch
+- `0x79904`: lookup/configure object
+- `0x7994A`: callback registration
+- `0x7A0FE`: click dispatcher compare
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`
