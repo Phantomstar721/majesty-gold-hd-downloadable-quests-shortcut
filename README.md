@@ -1,7 +1,7 @@
 # Majesty Gold HD - Move Custom Quest Button
 
-This tiny Windows helper moves the Custom/Downloadable Quest button on Majesty Gold
-HD's quest selection map down beside the permanent bottom controls.
+This tiny Windows helper experiments with moving the Custom/Downloadable Quest button
+on Majesty Gold HD's quest selection map down beside the permanent bottom controls.
 
 The normal game places that button on the map itself, which means you often have to
 pan around just to reach downloaded or Workshop quests. This patch changes the
@@ -26,9 +26,12 @@ do not contain the same Custom Quest menu record.
 
 The installer patches `Data\UIData_*.dat` inside your Majesty Gold HD install. It looks
 for the quest-select menu record named `APdb`, finds the downloadable quest button,
-relocates that record into the fixed bottom-control block, and moves it beside the
-Freestyle quest button. It also rewrites the button's trailing style flags to more
-closely match fixed overlay controls instead of panning map markers.
+relocates that record near the bottom-control block, and moves it beside the Freestyle
+quest button.
+
+Current limitation: in-game testing showed that this still behaves like a map-layer
+button when the quest map pans. A later opcode/style rewrite experiment crashed the
+quest map, so that unsafe change is not included.
 
 Original files are backed up here:
 

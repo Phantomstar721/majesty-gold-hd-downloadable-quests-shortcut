@@ -22,25 +22,28 @@ The custom/downloadable quest button is identified by both:
 
 The stock rectangle is hard-coded at `70,131,10,10` in every newer UIData file checked.
 When only this rectangle is changed, the button moves visually and remains clickable,
-but it still belongs to the panning map layer. The fix is to move the whole 112-byte
-button record so it sits immediately before the Freestyle button record in the later
-fixed-control block.
+but it still belongs to the panning map layer.
 
-In-game testing showed that record relocation alone still looked/behaved like the first
-coordinate-only patch. The next experiment rewrites the trailing style block from the
-map-marker pattern:
+Moving the whole 112-byte button record so it sits immediately before the Freestyle
+button record is file-format safe, but in-game testing showed it still behaves like a
+map-layer button.
+
+Do not rewrite the trailing opcode block from the map-marker pattern:
 
 ```text
 3,2, 3,201326592, 6,4034, 36,3, color, color, color
 ```
 
-to a fixed-overlay-style pattern:
+to the attempted fixed-overlay-style pattern:
 
 ```text
 3,2, 3,128, 43,1, 6,4034, 38,0, 0
 ```
 
 This keeps text/action ID `17` and image ID `4034` intact.
+
+That experiment crashed the quest map with `Unknown opcode in CYDialog Stream`, so the
+classification is not a simple style-tail swap.
 
 The bottom Freestyle button is identified by:
 
