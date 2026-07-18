@@ -18,9 +18,7 @@ if (Test-Path -LiteralPath $package) {
 New-Item -ItemType Directory -Path $staging | Out-Null
 
 Copy-Item -LiteralPath (Join-Path $root "Install - Downloadable Quests Shortcut.bat") -Destination $staging
-Copy-Item -LiteralPath (Join-Path $root "Install - Move Custom Quest Button.bat") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "Uninstall - Restore Original Quest Buttons.bat") -Destination $staging
-Copy-Item -LiteralPath (Join-Path $root "Restore Original Custom Quest Button.bat") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "README.md") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "LICENSE") -Destination $staging
 Copy-Item -LiteralPath (Join-Path $root "scripts") -Destination $staging -Recurse

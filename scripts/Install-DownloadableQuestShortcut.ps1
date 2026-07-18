@@ -61,9 +61,50 @@ function Get-MajestyPath {
     if ($RequestedPath) {
         return $RequestedPath
     }
+
     if (Test-Path -LiteralPath $DefaultGamePath) {
         return $DefaultGamePath
     }
+
+    $steamRoots = @()
+    foreach ($key in @(
+        "HKLM:\SOFTWARE\WOW6432Node\Valve\Steam",
+        "HKLM:\SOFTWARE\Valve\Steam",
+        "HKCU:\SOFTWARE\Valve\Steam"
+    )) {
+        try {
+            $installPath = (Get-ItemProperty -LiteralPath $key -ErrorAction Stop).InstallPath
+            if ($installPath) {
+                $steamRoots += $installPath
+            }
+        } catch {
+        }
+    }
+
+    foreach ($root in $steamRoots | Select-Object -Unique) {
+        $candidate = Join-Path $root "steamapps\common\Majesty HD"
+        if (Test-Path -LiteralPath $candidate) {
+            return $candidate
+        }
+    }
+
+    foreach ($root in $steamRoots | Select-Object -Unique) {
+        $libraryFile = Join-Path $root "steamapps\libraryfolders.vdf"
+        if (-not (Test-Path -LiteralPath $libraryFile)) {
+            continue
+        }
+
+        foreach ($line in Get-Content -LiteralPath $libraryFile) {
+            if ($line -match '"path"\s+"([^"]+)"') {
+                $libraryRoot = $Matches[1] -replace "\\\\", "\"
+                $candidate = Join-Path $libraryRoot "steamapps\common\Majesty HD"
+                if (Test-Path -LiteralPath $candidate) {
+                    return $candidate
+                }
+            }
+        }
+    }
+
     throw "Could not find Majesty HD. Re-run with -GamePath ""C:\Path\To\Majesty HD""."
 }
 
