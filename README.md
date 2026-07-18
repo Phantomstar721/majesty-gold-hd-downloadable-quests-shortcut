@@ -68,6 +68,10 @@ record, converts the duplicate to object `4034`, and places it beside Freestyle.
 tests the intended final shape: Freestyle stays intact and Downloadable Quests gets its
 own fixed-layer button.
 
+`Experiment - Replace Map Button With Fixed Clone.bat` does the same fixed clone, but
+also removes the original panning-map `4034` record first. This avoids duplicate object
+ID collision and is the more likely final implementation path.
+
 Original files are backed up here:
 
 ```text

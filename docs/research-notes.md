@@ -119,6 +119,12 @@ clone to `4034`, and insert it immediately after the original fixed icon record.
 stock executable accepts a fixed-layer `4034` clone, this should preserve Freestyle and
 add a separate fixed Downloadable Quests button without EXE patching.
 
+In-game testing showed the clone-only experiment did not produce a visible new button.
+The most likely cause is duplicate object ID collision: the stock panning-map
+Downloadable Quests record still owns object `4034`, so the fixed duplicate is ignored
+or overwritten. The next diagnostic removes the original map-layer `4034` record before
+inserting the fixed clone.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

@@ -6,6 +6,7 @@ param(
     [Nullable[int]]$Y = $null,
     [int]$Width = 66,
     [int]$Height = 66,
+    [switch]$RemoveMapButton,
     [switch]$HideMapButton,
     [switch]$DryRun
 )
@@ -175,6 +176,16 @@ function Insert-Bytes {
     return $result
 }
 
+function Remove-Bytes {
+    param([byte[]]$Bytes, [int]$Start, [int]$End)
+
+    $length = $End - $Start
+    [byte[]]$result = New-Object byte[] ($Bytes.Length - $length)
+    [Array]::Copy($Bytes, 0, $result, 0, $Start)
+    [Array]::Copy($Bytes, $End, $result, $Start, $Bytes.Length - $End)
+    return $result
+}
+
 function Copy-Range {
     param([byte[]]$Bytes, [int]$Start, [int]$Length)
 
@@ -282,6 +293,21 @@ function Patch-UiDataFile {
     $recordLength = $freestyle.EndOffset - $freestyle.Offset
     [byte[]]$freestyleRecord = Copy-Range $bytes $freestyle.Offset $recordLength
     [byte[]]$cloneRecord = Convert-FreestyleIconToCustomClone $freestyleRecord $targetX $targetY $Width $Height
+    $removeLength = 0
+    $removeOffset = $null
+    $removeEndOffset = $null
+
+    if ($RemoveMapButton) {
+        if ($null -eq $mapButton) {
+            return [pscustomobject]@{ Status = "Skipped"; Reason = "Could not find the original map-layer Custom Quest button to remove."; Path = $Path }
+        }
+        if ($mapButton.Offset -eq $freestyle.Offset) {
+            return [pscustomobject]@{ Status = "Skipped"; Reason = "Refusing to remove the fixed Freestyle source record."; Path = $Path }
+        }
+        $removeOffset = $mapButton.Offset
+        $removeEndOffset = $mapButton.EndOffset
+        $removeLength = $removeEndOffset - $removeOffset
+    }
 
     $result = [pscustomobject]@{
         Status = "Patched"
@@ -304,14 +330,30 @@ function Patch-UiDataFile {
         Copy-Item -LiteralPath $Path -Destination $backupPath
     }
 
-    [byte[]]$newBytes = Insert-Bytes $bytes $insertOffset $cloneRecord
+    if ($RemoveMapButton) {
+        [byte[]]$newBytes = Remove-Bytes $bytes $removeOffset $removeEndOffset
+        if ($insertOffset -gt $removeOffset) {
+            $insertOffset -= $removeLength
+        }
+    } else {
+        [byte[]]$newBytes = $bytes
+    }
+
+    [byte[]]$newBytes = Insert-Bytes $newBytes $insertOffset $cloneRecord
     $delta = $cloneRecord.Length
     foreach ($entry in $entries) {
-        if ($entry.DataOffset -gt $insertOffset) {
-            Write-U32 $newBytes $entry.DataOffsetField ([uint32]($entry.DataOffset + $delta))
+        $updatedOffset = $entry.DataOffset
+        if ($RemoveMapButton -and $entry.DataOffset -gt $removeOffset) {
+            $updatedOffset -= $removeLength
+        }
+        if ($updatedOffset -gt $insertOffset) {
+            $updatedOffset += $delta
+        }
+        if ($updatedOffset -ne $entry.DataOffset) {
+            Write-U32 $newBytes $entry.DataOffsetField ([uint32]$updatedOffset)
         }
     }
-    Write-U32 $newBytes $apdb.DataSizeField ([uint32]($apdb.DataSize + $delta))
+    Write-U32 $newBytes $apdb.DataSizeField ([uint32]($apdb.DataSize + $delta - $removeLength))
 
     if ($HideMapButton -and $null -ne $mapButton) {
         Write-U32 $newBytes ($mapButton.Offset + 20) 1
@@ -337,7 +379,11 @@ if (-not $DryRun) {
     Assert-FilesWritable $uiFiles
 }
 
-Write-Host "Majesty Gold HD experiment: Clone fixed Custom Quest button"
+if ($RemoveMapButton) {
+    Write-Host "Majesty Gold HD experiment: Replace map Custom Quest button with fixed clone"
+} else {
+    Write-Host "Majesty Gold HD experiment: Clone fixed Custom Quest button"
+}
 Write-Host "Game path: $resolvedGamePath"
 if ($DryRun) {
     Write-Host "Dry run: no files will be changed."
