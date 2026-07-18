@@ -6,6 +6,7 @@ param(
     [Nullable[int]]$Y = $null,
     [int]$Width = 66,
     [int]$Height = 66,
+    [switch]$KeepMapMarkerStyle,
     [switch]$DryRun
 )
 
@@ -221,6 +222,29 @@ function Move-ByteRange {
     return $InsertBefore
 }
 
+function Write-FixedOverlayStyle {
+    param(
+        [byte[]]$Bytes,
+        [int]$Offset
+    )
+
+    # The stock downloadable quest button uses the same trailing token pattern
+    # as panning map quest markers. This rewrites only that trailing style block
+    # to match fixed overlay controls more closely while preserving text/action
+    # ID 17, image group IX34, and image ID 4034.
+    Write-U32 $Bytes ($Offset + 68) 3
+    Write-U32 $Bytes ($Offset + 72) 2
+    Write-U32 $Bytes ($Offset + 76) 3
+    Write-U32 $Bytes ($Offset + 80) 128
+    Write-U32 $Bytes ($Offset + 84) 43
+    Write-U32 $Bytes ($Offset + 88) 1
+    Write-U32 $Bytes ($Offset + 92) 6
+    Write-U32 $Bytes ($Offset + 96) 4034
+    Write-U32 $Bytes ($Offset + 100) 38
+    Write-U32 $Bytes ($Offset + 104) 0
+    Write-U32 $Bytes ($Offset + 108) 0
+}
+
 function Assert-FilesWritable {
     param([object[]]$Files)
 
@@ -281,6 +305,8 @@ function Patch-UiDataFile {
         Path = $Path
         OldRect = "$($custom.X),$($custom.Y),$($custom.Width),$($custom.Height)"
         NewRect = "$targetX,$targetY,$Width,$Height"
+        OldOffset = ("0x{0:X}" -f ($custom.Offset - $apdb.Offset))
+        Style = $(if ($KeepMapMarkerStyle) { "MapMarker" } else { "FixedOverlay" })
     }
 
     if ($DryRun) {
@@ -300,6 +326,10 @@ function Patch-UiDataFile {
     $customOffset = $custom.Offset
     if ($custom.Offset -lt $freestyle.Offset -and $custom.EndOffset -ne $freestyle.Offset) {
         $customOffset = Move-ByteRange $bytes $custom.Offset $custom.EndOffset $freestyle.Offset
+    }
+
+    if (-not $KeepMapMarkerStyle) {
+        Write-FixedOverlayStyle $bytes $customOffset
     }
 
     Write-U32 $bytes ($customOffset + 12) ([uint32]$targetX)
@@ -341,7 +371,7 @@ $results = foreach ($file in $uiFiles) {
 foreach ($item in $results) {
     $name = Split-Path -Leaf $item.Path
     if ($item.Status -eq "Patched" -or $item.Status -eq "WouldPatch") {
-        Write-Host ("{0}: {1} {2} -> {3}" -f $name, $item.Status, $item.OldRect, $item.NewRect)
+        Write-Host ("{0}: {1} {2} -> {3} style={4} oldOffset={5}" -f $name, $item.Status, $item.OldRect, $item.NewRect, $item.Style, $item.OldOffset)
     } else {
         Write-Host ("{0}: {1} ({2})" -f $name, $item.Status, $item.Reason)
     }

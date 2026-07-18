@@ -27,7 +27,8 @@ do not contain the same Custom Quest menu record.
 The installer patches `Data\UIData_*.dat` inside your Majesty Gold HD install. It looks
 for the quest-select menu record named `APdb`, finds the downloadable quest button,
 relocates that record into the fixed bottom-control block, and moves it beside the
-Freestyle quest button.
+Freestyle quest button. It also rewrites the button's trailing style flags to more
+closely match fixed overlay controls instead of panning map markers.
 
 Original files are backed up here:
 
