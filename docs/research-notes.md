@@ -58,6 +58,24 @@ button still launched Freestyle and the top hover still showed `Freestyle Game`.
 Next diagnostic changes the wider label record's `5,70` pair to `5,76` as well. These
 values line up with ASCII hotkeys/actions (`F` to `L`) across other menu records.
 
+In-game testing showed the wider label text could be changed to `Load Downloadable`, but
+the click still launched Freestyle. The `5,70 -> 76` change also did not affect the
+click dispatch, so the label text/action-looking fields are cosmetic or secondary.
+
+Executable inspection found hardcoded APdb handling near `MajestyHD.exe` file offsets
+`0x787D0`, `0x79870`, and `0x7A0EE`. The click path compares a selected object/image ID
+against values including:
+
+- `0x0FC2` / `4034`: downloadable/custom quest button
+- `0x1388` / `5000`: Freestyle icon
+- `0x138A` / `5002`: Erase Victories
+
+This suggests the fixed-overlay experiment should change a known fixed control's object
+ID to `4034`, while preserving a valid fixed-control opcode shape.
+
+The follow-up fixed-label diagnostic changes the wider bottom Freestyle label's `6,5900`
+token to `6,4034`, because `5900` appears in the APdb setup path alongside `5000`.
+
 The bottom Freestyle button is identified by:
 
 - text token `33, 77`, where text ID `77` is `Freestyle Game`

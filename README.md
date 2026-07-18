@@ -44,6 +44,16 @@ built by duplicating a known fixed overlay button instead of mutating the map ma
 `FREESTYLE QUESTS` label/button record instead, changing visible text token `82` to
 `17` and the likely action/hotkey token `70` to `76`.
 
+`Experiment - Freestyle Icon Becomes Custom Quests.bat` targets the fixed circular
+Freestyle icon and changes its text/image/object IDs to the downloadable quest button.
+Executable inspection shows the click dispatcher branches on object ID `4034`, so this
+is the strongest fixed-overlay diagnostic so far.
+
+`Experiment - Freestyle Label Object Becomes Custom Quests.bat` targets the wider
+bottom `FREESTYLE QUESTS` label/button record and changes its object/image ID from
+`5900` to `4034`. This tests whether the lower text strip is the click surface that
+dispatches Freestyle.
+
 Original files are backed up here:
 
 ```text
