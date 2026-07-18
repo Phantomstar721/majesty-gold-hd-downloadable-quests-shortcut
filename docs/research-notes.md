@@ -21,6 +21,10 @@ The custom/downloadable quest button is identified by both:
 - image token `6, 4034`, using the `IX34q download btn` image set from `DataMX\mx_interfacedata.cam`
 
 The stock rectangle is hard-coded at `70,131,10,10` in every newer UIData file checked.
+When only this rectangle is changed, the button moves visually and remains clickable,
+but it still belongs to the panning map layer. The fix is to move the whole 112-byte
+button record so it sits immediately before the Freestyle button record in the later
+fixed-control block.
 
 The bottom Freestyle button is identified by:
 

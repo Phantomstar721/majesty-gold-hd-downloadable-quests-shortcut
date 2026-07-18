@@ -176,6 +176,7 @@ function Find-Element {
         if ($hasText -and $hasImage) {
             return [pscustomobject]@{
                 Offset = $absolute
+                EndOffset = $next
                 X = [int](Read-U32 $Bytes ($absolute + 12))
                 Y = [int](Read-U32 $Bytes ($absolute + 16))
                 Width = [int](Read-U32 $Bytes ($absolute + 20))
@@ -185,6 +186,56 @@ function Find-Element {
     }
 
     return $null
+}
+
+function Move-ByteRange {
+    param(
+        [byte[]]$Bytes,
+        [int]$Start,
+        [int]$End,
+        [int]$InsertBefore
+    )
+
+    if ($Start -eq $InsertBefore -or $End -eq $InsertBefore) {
+        return $Start
+    }
+    if ($InsertBefore -gt $Start -and $InsertBefore -lt $End) {
+        throw "Cannot move a byte range inside itself."
+    }
+
+    $length = $End - $Start
+    [byte[]]$chunk = New-Object byte[] $length
+    [Array]::Copy($Bytes, $Start, $chunk, 0, $length)
+
+    if ($InsertBefore -gt $End) {
+        $tailLength = $InsertBefore - $End
+        [Array]::Copy($Bytes, $End, $Bytes, $Start, $tailLength)
+        $newStart = $InsertBefore - $length
+        [Array]::Copy($chunk, 0, $Bytes, $newStart, $length)
+        return $newStart
+    }
+
+    $headLength = $Start - $InsertBefore
+    [Array]::Copy($Bytes, $InsertBefore, $Bytes, $InsertBefore + $length, $headLength)
+    [Array]::Copy($chunk, 0, $Bytes, $InsertBefore, $length)
+    return $InsertBefore
+}
+
+function Assert-FilesWritable {
+    param([object[]]$Files)
+
+    foreach ($file in $Files) {
+        $stream = $null
+        try {
+            $stream = [IO.File]::Open($file.FullName, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+        } catch {
+            throw "Cannot patch $($file.Name) because it is in use or not writable. Close Majesty Gold HD and run this installer again. If the game is closed, right-click the BAT and choose Run as administrator."
+        } finally {
+            if ($null -ne $stream) {
+                $stream.Dispose()
+            }
+        }
+    }
 }
 
 function Patch-UiDataFile {
@@ -246,10 +297,15 @@ function Patch-UiDataFile {
         Copy-Item -LiteralPath $Path -Destination $backupPath
     }
 
-    Write-U32 $bytes ($custom.Offset + 12) ([uint32]$targetX)
-    Write-U32 $bytes ($custom.Offset + 16) ([uint32]$targetY)
-    Write-U32 $bytes ($custom.Offset + 20) ([uint32]$Width)
-    Write-U32 $bytes ($custom.Offset + 24) ([uint32]$Height)
+    $customOffset = $custom.Offset
+    if ($custom.Offset -lt $freestyle.Offset -and $custom.EndOffset -ne $freestyle.Offset) {
+        $customOffset = Move-ByteRange $bytes $custom.Offset $custom.EndOffset $freestyle.Offset
+    }
+
+    Write-U32 $bytes ($customOffset + 12) ([uint32]$targetX)
+    Write-U32 $bytes ($customOffset + 16) ([uint32]$targetY)
+    Write-U32 $bytes ($customOffset + 20) ([uint32]$Width)
+    Write-U32 $bytes ($customOffset + 24) ([uint32]$Height)
     [IO.File]::WriteAllBytes($Path, $bytes)
 
     return $result
@@ -265,6 +321,10 @@ $backupDir = Join-Path $dataPath "_custom_quest_button_originals"
 $uiFiles = Get-ChildItem -LiteralPath $dataPath -Filter "UIData_*.dat" | Sort-Object Name
 if ($uiFiles.Count -eq 0) {
     throw "No UIData_*.dat files found in $dataPath."
+}
+
+if (-not $DryRun) {
+    Assert-FilesWritable $uiFiles
 }
 
 Write-Host "Majesty Gold HD Custom Quest Button mover"
